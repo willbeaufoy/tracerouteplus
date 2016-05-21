@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
  
 # Copyright (c) 2010, Westly Ward
 # All rights reserved.
@@ -28,15 +28,16 @@
 #
 # Modifications made 2012 by Kyle Flanagan to update this class to version 3
 #
-#
+# More modications made 2016 by Will Beaufoy
 
-import json, urllib, urllib2, socket
+import json, urllib.request, urllib.parse, urllib.error, urllib.request, urllib.error, urllib.parse, socket
+
 CITY_URL = "http://api.ipinfodb.com/v3/ip-city/"
 COUNTRY_URL = "http://api.ipinfodb.com/v3/ip-country/"
 class IPInfo() :
     def __init__(self, apikey, ip=None, city=False, country=False) :
         if ip == None:
-            print "Error: No IP address specified."
+            print("Error: No IP address specified.")
             return None
         self.apikey = apikey
         if city:
@@ -44,7 +45,7 @@ class IPInfo() :
         elif country:
             self.data = self.GetIPInfo(COUNTRY_URL, ip)
         else:
-            print "Error: No precision specified. Must call with either city=True or country=True"
+            print("Error: No precision specified. Must call with either city=True or country=True")
             return None
 
     def GetIPInfo(self, baseurl, ip=None, timezone=False) :
@@ -57,15 +58,16 @@ class IPInfo() :
             passdict["timezone"] = "true"
         else :
             passdict["timezone"] = "false"
-        urldata = urllib.urlencode(passdict)
+        urldata = urllib.parse.urlencode(passdict)
         url = baseurl + "?" + urldata
-        urlobj = urllib2.urlopen(url)
+        urlobj = urllib.request.urlopen(url)
         #print urlobj
         data = urlobj.read()
         #print '*' * 80
         #print data
         #print '*' * 80
         urlobj.close()
+        data = data.decode('utf-8')
         datadict = json.loads(data)
         return datadict
 

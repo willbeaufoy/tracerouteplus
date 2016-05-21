@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # (C) Kyle Flanagan 2012
 # vistraceroute
@@ -17,7 +17,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from pyipinfodb import *
-import subprocess, urllib, urllib2, sys, os, re
+import subprocess, urllib.request, urllib.parse, urllib.error, urllib.request, urllib.error, urllib.parse, sys, os, re, time
 
 # api key for ipinfodb.com
 API_KEY = "687f07cd5c6a20f0d7a6890751f049a3745c95f98c7706500bfd1fce73f0a1d0"
@@ -32,136 +32,116 @@ def main():
     user can see a visual represenation of the traceroute data.
     """
     if len(sys.argv) < 2:
-        print "Usage: vistraceroute <ip_address>"
+        print("Usage: vistraceroute <ip_address>")
         return
     IP = sys.argv[1]
     args = ['whois', IP]
-    process = subprocess.Popen(args,
-                    shell=False,
-                    stdout=subprocess.PIPE)
+    whois_process = subprocess.call(args)
 
-    print(process.communicate()[0])
+    # Print whois output for IP of destination
+    # print(whois_process.communicate())
 
-    print "Visual traceroute to IP: " + IP
+    print("TraceroutePlus to IP: " + IP)
 
-    # determine system
-    posix_system = True
     traceroute = 'traceroute'
     args = [IP]
-    args.insert(0, '-m30') # Limit maximum num of hope to 30
+    args.insert(0, '-m30') # Limit maximum num of hops to 30
     args.insert(0, '-w1') # Limit maximum wait time per hop to 1 sec
-    # if (os.name != "posix"):
-    #     # assume windows
-    #     posix_system = False
-    #     traceroute = 'tracert'
-    #     args.insert(0, '-d') # for windows traceroute to just get IP
 
     args.insert(0, traceroute)
     # args now looks like: traceroute, [flag,] IP
     # start traceroute
-    output = []
 
-    print "Starting traceroute..."
-    process = subprocess.Popen(args, 
+    print("Starting traceroute...\n")
+    # tr_process = subprocess.check_output(args)
+    tr_process = subprocess.Popen(args, 
             shell=False, 
             stdout=subprocess.PIPE)
 
-    # wait for traceroute to finish
-    print "Traceroute running. Please wait...\n"
-    if process.wait() != 0:
-        print "Traceroute error. Exiting."
-        #print process.communicate()[1]
-        return
-    
-    # read data from traceroute and split it into lines
-    lines = process.communicate()[0].split('\n')
-    # First line of traceroute outpout is general info - remove it
-    for line in lines[1:]:
-        output.append({'trt': line})
-        # print line
-    # print out traceroute data for user
-    # for line in lines:
-    #     print line
-    # print output
-    # print "Traceroute finished. Looking up IP addresses. Please wait..."
-    # first line is traceroute info output, remove it
-    lines.pop(0)
-    # now get hostname, ip from each line
-    ips = []
-    for i,txt in enumerate(output):
-        if txt['trt'] != "":
-            # if we didn't get a reply from a gateway, ignore that line in the
-            # traceroute output
-            if '*' in line:
-                # continue
-                output[i]['ip'] = 'No IP'
-                print(output[i])
-                continue
-            # Split the line and extract the hostname and IP address
-            split_line = txt['trt'].split('  ')
-            if split_line[0] != '':
-                output[i]['hop'] = split_line[0].strip()
-                output[i]['ip'] = split_line[1].split(' ')[1][1:-1]
-            else:
-                output[i]['hop'] = split_line[1].strip()
-                output[i]['ip'] = split_line[2].split(' ')[1][1:-1]
+    # Each line from the process will be 'dealt with' by the for loop as it appears.
+    for line in tr_process.stdout:
+        line = line.decode("utf-8")
 
-            args = [output[i]['ip']]
-            args.insert(0, 'whois')
-            # args now looks like: whois IP
-            # start whois
-            process = subprocess.Popen(args,
-                    shell=False,
-                    stdout=subprocess.PIPE)
+        # Print whole traceroute line for testing
+        # print(line)
 
-            if process.wait() != 0:
-                print "Whois error. Exiting."
-                #print process.communicate()[1]
-                return
-            
-            # read Registrant Organisation from whois
-            whois_output = process.communicate()[0]
+        # Skip the first line as it contains the traceroute 'intro'
+        if re.search('^traceroute', line):
+            continue
 
-            # print raw whois output for testing
-            # print(whois_output)
+        split_line = line.split('  ')
+        output = {}
 
-            if re.findall("descr:.*", whois_output):
-                output[i]['descr'] = re.findall("descr:.*", whois_output)[0].replace('descr:', '').strip()            
-            if re.findall("person:.*", whois_output):
-                output[i]['person'] = re.findall("person:.*", whois_output)[0].replace('person:', '').strip()
-            if re.findall("address:.*", whois_output):
-                output[i]['address'] = re.findall("address:.*", whois_output)[0].replace('address:', '').strip()
-            if re.findall("OrgName:.*", whois_output):
-                output[i]['OrgName'] = re.findall("OrgName:.*", whois_output)[0].replace('OrgName:', '').strip()
-            if re.findall("org-name:.*", whois_output):
-                output[i]['org-name'] = re.findall("org-name:.*", whois_output)[0]
-            if re.findall("Registrant Name:.*", whois_output):
-                output[i]['Registrant Name'] = re.findall("Registrant Name:.*", whois_output)[0]
-            if re.findall("Registrant Organisation:.*", whois_output):
-                output[i]['Registrant Organisation'] = re.findall("Registrant Organisation:.*", whois_output)[0]
-            if re.findall("Registrant Street:.*", whois_output):
-                output[i]['Registrant Street'] = re.findall("Registrant Street:.*", whois_output)[0]
-            if re.findall("Registrant City:.*", whois_output):
-                output[i]['Registrant City'] = re.findall("Registrant City:.*", whois_output)[0]
+        if '*' in line:
+            output['hop'] = split_line[0].strip()
+            print('Hop: ' + output['hop'] + '***\n')
+            continue
 
-            ipi = IPInfo(API_KEY, output[i]['ip'], city=True) # get city, state
-            output[i]['location'] = ipi.getCity() + ', ' + ipi.getRegion()
+        # Split the line and extract the hostname and IP address
+        output['hop'] = split_line[0].strip()
+        output['hostname'] = re.findall('^(.+)\s', split_line[1])[0]
+        output['ip'] = re.findall('\((.+)\)', split_line[1])[0]
 
-            # Print raw dictionary output for testing
-            # print(output[i], '\n')
+        args = [output['ip']]
+        args.insert(0, 'whois')
+        # args now looks like: whois IP
+        # start whois
+        process = subprocess.Popen(args,
+                shell=False,
+                stdout=subprocess.PIPE)
 
-            print('Hop: ' + output[i]['hop'])
-            print('IP: ' + output[i]['ip'])
-            if 'descr' in output[i]:
-                print('Descr: ' + output[i]['descr'])
-            if 'OrgName' in output[i]:
-                print('OrgName: ' + output[i]['OrgName'])
-            if 'person' in output[i]:
-                print('Contact Person: ' + output[i]['person'])
-            if 'address' in output[i]:
-                print('Contact Address: ' + output[i]['address'])
-            print('Server location: ' + output[i]['location'])
-            print('')
+        if process.wait() != 0:
+            print("Whois error. Exiting.")
+            return
+        
+        # read Registrant Organisation from whois
+        whois_output = process.communicate()[0]
+        whois_output = whois_output.decode("utf-8")
+
+        # print raw whois output for testing
+        # print(whois_output)
+
+        if re.findall("descr:.*", whois_output):
+            output['descr'] = re.findall("descr:.*", whois_output)[0].replace('descr:', '').strip()
+        if re.findall("person:.*", whois_output):
+            output['person'] = re.findall("person:.*", whois_output)[0].replace('person:', '').strip()
+        if re.findall("address:.*", whois_output):
+            output['address'] = re.findall("address:.*", whois_output)[0].replace('address:', '').strip()
+        if re.findall("OrgName:.*", whois_output):
+            output['OrgName'] = re.findall("OrgName:.*", whois_output)[0].replace('OrgName:', '').strip()
+        if re.findall("org-name:.*", whois_output):
+            output['org-name'] = re.findall("org-name:.*", whois_output)[0]
+        if re.findall("country:.*", whois_output):
+            output['country'] = re.findall("country:.*", whois_output)[0].replace('country:', '').strip()
+        if re.findall("Registrant Name:.*", whois_output):
+            output['Registrant Name'] = re.findall("Registrant Name:.*", whois_output)[0]
+        if re.findall("Registrant Organisation:.*", whois_output):
+            output['Registrant Organisation'] = re.findall("Registrant Organisation:.*", whois_output)[0]
+        if re.findall("Registrant Street:.*", whois_output):
+            output['Registrant Street'] = re.findall("Registrant Street:.*", whois_output)[0]
+        if re.findall("Registrant City:.*", whois_output):
+            output['Registrant City'] = re.findall("Registrant City:.*", whois_output)[0]
+
+        ipi = IPInfo(API_KEY, output['ip'], city=True) # get city, state
+        output['location'] = ipi.getCity() + ', ' + ipi.getRegion()
+
+        print('Hop: ' + output['hop'])
+        print('Hostname: ' + output['hostname'])
+        print('IP: ' + output['ip'])
+        if 'descr' in output:
+            print('Descr: ' + output['descr'])
+        if 'OrgName' in output:
+            print('OrgName: ' + output['OrgName'])
+        if 'person' in output:
+            print('Contact Person: ' + output['person'])
+        if 'address' in output:
+            print('Contact Address: ' + output['address'])
+        if 'Registrant Name' in output:
+            print('Registrant Name: ' + output['Registrant Name'])
+        print('Server location: ' + output['location'])
+        if 'country' in output:
+            print('Country: ' + output['country'])
+        print('')
 
 if __name__ == "__main__":
     main()
