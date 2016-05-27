@@ -23,25 +23,23 @@ import subprocess, urllib.request, urllib.parse, urllib.error, urllib.request, u
 API_KEY = "687f07cd5c6a20f0d7a6890751f049a3745c95f98c7706500bfd1fce73f0a1d0"
 
 def main():
-    """
-    Usage: vistraceroute ip_address
-    ---
-    vistraceroute uses data from traceroute to query locations of IP addresses.
-    Using these locations, it constructs a Google Static Map URL to plot the
-    locations and also draws the path from location to location so that the
-    user can see a visual represenation of the traceroute data.
-    """
+
     if len(sys.argv) < 2:
-        print("Usage: vistraceroute <ip_address>")
+        print("Usage: trp <ip_address / hostname>")
         return
+
     IP = sys.argv[1]
-    args = ['whois', IP]
-    whois_process = subprocess.call(args)
 
-    # Print whois output for IP of destination
-    # print(whois_process.communicate())
+    # Full whois of destination
+    print('***** Full whois of destination *****\n')
+    subprocess.call(['whois', IP])
 
-    print("TraceroutePlus to IP: " + IP)
+    # Full response headers of destination
+    print('\n***** Full response headers of destination *****\n')
+    subprocess.call(['curl', '-I', IP])
+
+    # Start traceroute
+    print("\n***** TraceroutePlus to destination *****\n")
 
     traceroute = 'traceroute'
     args = [IP]
@@ -54,8 +52,8 @@ def main():
 
     print("Starting traceroute...\n")
     # tr_process = subprocess.check_output(args)
-    tr_process = subprocess.Popen(args, 
-            shell=False, 
+    tr_process = subprocess.Popen(args,
+            shell=False,
             stdout=subprocess.PIPE)
 
     # Each line from the process will be 'dealt with' by the for loop as it appears.
@@ -74,7 +72,7 @@ def main():
 
         if '*' in line:
             output['hop'] = split_line[0].strip()
-            print('Hop: ' + output['hop'] + '***\n')
+            print('Hop: ' + output['hop'] + ' ***\n')
             continue
 
         # Split the line and extract the hostname and IP address
