@@ -43,8 +43,9 @@ def main():
 
     traceroute = 'traceroute'
     args = [IP]
-    args.insert(0, '-m30') # Limit maximum num of hops to 30
-    args.insert(0, '-w1') # Limit maximum wait time per hop to 1 sec
+    # args.insert(0, '-m30') # Limit maximum num of hops to 30
+    # args.insert(0, '-w1') # Limit maximum wait time per hop to 1 sec
+    args.insert(0, '-A') # Add Autonomous System (AS) path lookups
 
     args.insert(0, traceroute)
     # args now looks like: traceroute, [flag,] IP
@@ -70,15 +71,16 @@ def main():
         split_line = line.split('  ')
         output = {}
 
-        if '*' in line:
+        if '* * *' in line:
             output['hop'] = split_line[0].strip()
             print('Hop: ' + output['hop'] + ' ***\n')
             continue
 
-        # Split the line and extract the hostname and IP address
+        # Split the line and extract the hostname, IP address and AS number
         output['hop'] = split_line[0].strip()
         output['hostname'] = re.findall('^(.+)\s', split_line[1])[0]
         output['ip'] = re.findall('\((.+)\)', split_line[1])[0]
+        output['asn'] = re.findall('\[(.+)\]', split_line[1])[0]
 
         args = [output['ip']]
         args.insert(0, 'whois')
@@ -126,6 +128,7 @@ def main():
         print('Hop: ' + output['hop'])
         print('Hostname: ' + output['hostname'])
         print('IP: ' + output['ip'])
+        print('AS Number: ' + output['asn'])
         if 'descr' in output:
             print('Descr: ' + output['descr'])
         if 'OrgName' in output:
