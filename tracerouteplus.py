@@ -31,8 +31,8 @@ def main():
     IP = sys.argv[1]
 
     # Full whois of destination
-    print('***** Full whois of destination *****\n')
-    subprocess.call(['whois', IP])
+    # print('***** Full whois of destination *****\n')
+    # subprocess.call(['whois', '-H', IP])
 
     # Full response headers of destination
     print('\n***** Full response headers of destination *****\n')
@@ -81,14 +81,12 @@ def main():
         output['hostname'] = re.findall('^(.+)\s', split_line[1])[0]
         output['ip'] = re.findall('\((.+)\)', split_line[1])[0]
         output['asn'] = re.findall('\[(.+)\]', split_line[1])[0]
+        output['rtt1'] = split_line[2]
+        output['rtt2'] = split_line[3]
+        output['rtt3'] = split_line[4]
 
-        args = [output['ip']]
-        args.insert(0, 'whois')
-        # args now looks like: whois IP
         # start whois
-        process = subprocess.Popen(args,
-                shell=False,
-                stdout=subprocess.PIPE)
+        process = subprocess.Popen(['whois', '-H', output['ip']], shell=False, stdout=subprocess.PIPE)
 
         if process.wait() != 0:
             print("Whois error. Exiting.")
@@ -142,6 +140,7 @@ def main():
         print('Server location: ' + output['location'])
         if 'country' in output:
             print('Country: ' + output['country'])
+        print('RTT: ' + output['rtt1'] + ', ' + output['rtt2'] + ', ' + output['rtt3'])
         print('')
 
 if __name__ == "__main__":
