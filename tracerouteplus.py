@@ -19,9 +19,6 @@
 from pyipinfodb import *
 import subprocess, urllib.request, urllib.parse, urllib.error, urllib.request, urllib.error, urllib.parse, sys, os, re, time
 
-# api key for ipinfodb.com
-API_KEY = "687f07cd5c6a20f0d7a6890751f049a3745c95f98c7706500bfd1fce73f0a1d0"
-
 def main():
 
     if len(sys.argv) < 2:
@@ -120,8 +117,9 @@ def main():
         if re.findall("Registrant City:.*", whois_output):
             output['Registrant City'] = re.findall("Registrant City:.*", whois_output)[0]
 
-        ipi = IPInfo(API_KEY, output['ip'], city=True) # get city, state
-        output['location'] = ipi.getCity() + ', ' + ipi.getRegion()
+        # Removed this functionality Jan 2016 as website stopped working
+        # ipi = IPInfo(API_KEY, output['ip'], city=True) # get city, state
+        # output['location'] = ipi.getCity() + ', ' + ipi.getRegion()
 
         print('Hop: ' + output['hop'])
         print('Hostname: ' + output['hostname'])
@@ -137,7 +135,8 @@ def main():
             print('Contact Address: ' + output['address'])
         if 'Registrant Name' in output:
             print('Registrant Name: ' + output['Registrant Name'])
-        print('Server location: ' + output['location'])
+        if 'location' in output:
+            print('Server location: ' + output['location'])
         if 'country' in output:
             print('Country: ' + output['country'])
         print('RTT: ' + output['rtt1'] + ', ' + output['rtt2'] + ', ' + output['rtt3'])
