@@ -16,8 +16,8 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pyipinfodb import *
-import subprocess, urllib.request, urllib.parse, urllib.error, urllib.request, urllib.error, urllib.parse, sys, os, re, time
+import pyipinfoio
+import sys, re, subprocess
 
 def main():
 
@@ -119,7 +119,11 @@ def main():
 
         # Removed this functionality Jan 2016 as website stopped working
         # ipi = IPInfo(API_KEY, output['ip'], city=True) # get city, state
-        # output['location'] = ipi.getCity() + ', ' + ipi.getRegion()
+        
+        ipinfoio_data = pyipinfoio.get_ip_location(output['ip'])
+        # Assume if city exists then region will too, at least as a key
+        if 'city' in ipinfoio_data and ipinfoio_data['city'] != '':
+            output['location'] = '{}, {}'.format(ipinfoio_data['city'], ipinfoio_data['region'])
 
         print('Hop: ' + output['hop'])
         print('Hostname: ' + output['hostname'])
